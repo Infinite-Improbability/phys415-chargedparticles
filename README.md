@@ -10,3 +10,5 @@ To run this code you will need Julia. The [latest stable release](https://julial
 3. Switch to package management mode by typing `]`
 4. Activate the project with `activate .`
 5. Run `instantiate` to install the dependencies defined in the project manifest.
+
+To run a Julia script inside this environment use `julia --project=. scriptName.jl`.

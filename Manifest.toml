@@ -665,6 +665,12 @@ git-tree-sha1 = "b649200e887a487468b71821e2644382699f1b0f"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
 version = "1.11.0"
 
+[[deps.UnitfulRecipes]]
+deps = ["RecipesBase", "Unitful"]
+git-tree-sha1 = "2f61bddb66a5a563b5e67c336577f1af1e650f7b"
+uuid = "42071c24-d89e-48dd-8a24-8a12d9b8861f"
+version = "1.5.3"
+
 [[deps.Unzip]]
 git-tree-sha1 = "34db80951901073501137bdbc3d5a8e7bbd06670"
 uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"

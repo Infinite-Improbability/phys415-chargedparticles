@@ -2,6 +2,7 @@ using LinearAlgebra: cross, dot, norm
 using Plots
 using Unitful
 using UnitfulRecipes
+include("interpolation.jl")
 
 mutable struct Particle
     """Properties of a single particle in the system."""

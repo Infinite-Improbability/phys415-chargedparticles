@@ -1,7 +1,7 @@
 using LinearAlgebra: cross, dot, norm
 using Unitful
 using Random
-using GLMakie
+using Javis
 import ColorSchemes.deep
 include("interpolation.jl")
 
@@ -71,40 +71,61 @@ particles = rand(Particle, 4)
 lim = 10
 
 # Init plot
-GLMakie.activate!()
-scene = Scene(;
-    # clear everything behind scene
-    clear = true,
-    # the camera struct of the scene.
-    visible = true,
-    # ssao and light are explained in more detail in `Documetation/Lighting`
-    ssao = Makie.SSAO(),
-    # Creates lights from theme, which right now defaults to `
-    # set_theme!(lightposition=:eyeposition, ambient=RGBf(0.5, 0.5, 0.5))`
-    lights = Makie.automatic,
-    backgroundcolor = :white,
-    resolution = (500, 500)
-)
-cam3d!(scene)
+myvideo = Video(500, 500)
 
-spheres = [Sphere(Point3f(ustrip.(u"m", p.r)...), ustrip(u"kg", p.m)) for p in particles]
-colours = deep[[ustrip(u"C", p.q) for p in particles]]
-sphere_plots = [mesh!(scene, spheres[i], color=colours[i]) for i in 1:length(particles)]
+function ground(args...) 
+    background("white") # canvas background
+    sethue("black") # pen color
+end
+
+function object(p=O, color="black")
+    sethue(color)
+    circle(p, 5, :fill)
+    return p
+end
+
+Background(1:iterations, ground)
+# red_ball = Object(1:70, (args...) -> object(O, "red"), Point(100, 0))
 
 # Offset initial velocity back 1/2 step so it leapfrogs with position
 stepVelocity!.(particles, -dt / 2)
 
 # Main loop
 print("Beginning loop.\n")
-record(scene, "scene.mp4", 1:iterations) do i
-    # ! indicates inplace functions
+
+positions = Matrix{Point}(undef, iterations, length(particles))
+
+scaleFactor = 10
+
+for i in 1:iterations
     stepVelocity!.(particles, dt)
     stepPosition!.(particles, dt)
-    px = [ustrip.(u"m", p.r[1]) for p in particles]
-    py = [ustrip.(u"m", p.r[2]) for p in particles]
-    pz = [ustrip.(u"m", p.r[3]) for p in particles]
-    translation_vectors = Vec3f.(px, py, pz)
-    translate!.(sphere_plots, translation_vectors)
+    positions[i,:] = [Point(ustrip(u"m", p.r[1])*scaleFactor, ustrip(u"m", p.r[3])*scaleFactor) for p in particles]
+    # for el in zip(dots, particles)
+    #     dot, p = el
+    #     pos = ustrip.(u"m", p.r)
+    #     act!(dot, Action(anim_translate(O, Point(pos[1], pos[3]))))
+    # end
 end
+
+dots = Vector{Object}(undef, length(particles))
+for i in 1:length(particles)
+    p = particles[i]
+    colour = deep[ustrip(u"C", p.q)]
+    pos = ustrip.(u"m", p.r)
+    dots[i] = Object((args...) -> object(O, colour), Point(pos[1], pos[2]))
+    act!(dots[i], Action(1:iterations, follow_path(positions[:,i])))
+end
+
+# for el in zip(dots, particles)
+#     dot, p = el
+#     pos = ustrip.(u"m", p.r)
+#     act!(dot, Action(anim_translate(O, Point(pos[1], pos[3]))))
+# end
+
+render(
+    myvideo;
+    pathname="circle.gif"
+)
 
 print("Loop complete.\n")

@@ -47,7 +47,18 @@ end
 function stepPosition!(part::Particle, dt::Quantity)
     """Update position over timestep dt with current velocity."""
     part.r += part.v * dt
-    part.r = mod1.(ustrip.(u"m", part.r), lim) * 1u"m"
+
+    for i in 1:3
+        if part.r[i] / lim >= 1
+            print("Overrun at $(part.r[i])")
+            part.r[i] = lim*(modf(part.r[i])[1] - 1)
+        elseif part.r[i] / lim <= -1
+            part.r[i] = lim*(1 - modf(part.r[i])[1])
+            print("Overrun at $(part.r[i])")
+        end
+    end
+
+    # part.r = mod1.(ustrip.(u"m", part.r), ustrip(u"m", lim)) * 1u"m"
 end
 
 
@@ -68,11 +79,12 @@ iterations = 10000
 # Define particles, in inital state
 particles = rand(Particle, 4)
 # Set lims where everything loops around
-lim = 10
+lim = 500u"nm"
 
 # Init plot
+scaleFactor = 10
+renderFrames = 1:floor(Int, iterations/4)
 myvideo = Video(500, 500)
-
 function ground(args...) 
     background("white") # canvas background
     sethue("black") # pen color
@@ -84,8 +96,7 @@ function object(p=O, color="black")
     return p
 end
 
-Background(1:iterations, ground)
-# red_ball = Object(1:70, (args...) -> object(O, "red"), Point(100, 0))
+Background(renderFrames, ground)
 
 # Offset initial velocity back 1/2 step so it leapfrogs with position
 stepVelocity!.(particles, -dt / 2)
@@ -95,37 +106,23 @@ print("Beginning loop.\n")
 
 positions = Matrix{Point}(undef, iterations, length(particles))
 
-scaleFactor = 10
-
 for i in 1:iterations
     stepVelocity!.(particles, dt)
     stepPosition!.(particles, dt)
-    positions[i,:] = [Point(ustrip(u"m", p.r[1])*scaleFactor, ustrip(u"m", p.r[3])*scaleFactor) for p in particles]
-    # for el in zip(dots, particles)
-    #     dot, p = el
-    #     pos = ustrip.(u"m", p.r)
-    #     act!(dot, Action(anim_translate(O, Point(pos[1], pos[3]))))
-    # end
+    positions[i,:] = [Point(ustrip(u"nm", p.r[1])*scaleFactor, ustrip(u"nm", p.r[2])*scaleFactor) for p in particles]
 end
 
 dots = Vector{Object}(undef, length(particles))
 for i in 1:length(particles)
     p = particles[i]
     colour = deep[ustrip(u"C", p.q)]
-    pos = ustrip.(u"m", p.r)
-    dots[i] = Object((args...) -> object(O, colour), Point(pos[1], pos[2]))
-    act!(dots[i], Action(1:iterations, follow_path(positions[:,i])))
+    dots[i] = Object((args...) -> object(O, colour), Point(positions[1,i]...))
+    act!(dots[i], Action(renderFrames, follow_path(positions[:,i])))
 end
 
-# for el in zip(dots, particles)
-#     dot, p = el
-#     pos = ustrip.(u"m", p.r)
-#     act!(dot, Action(anim_translate(O, Point(pos[1], pos[3]))))
-# end
-
+print("Loop complete.\n")
 render(
     myvideo;
     pathname="circle.gif"
 )
-
-print("Loop complete.\n")
+print("Render complete.\n")

@@ -32,18 +32,18 @@ function interpolate2D(f::Matrix, x::Vector, y::Vector, x0, y0)
     t1*u1*f[i,j] + t*u1*f[ip,j] + t*u*f[ip,jp] + t1*u*f[i,jp]
 end
 
-using Plots
-function interpolate2DTest()
+# using Plots
+# function interpolate2DTest()
     
-    data = rand(Float64, (4,4))
-    x = Vector(1:4)
-    y = Vector(1:4)
+#     data = rand(Float64, (4,4))
+#     x = Vector(1:4)
+#     y = Vector(1:4)
 
-    xpoints = 1:0.1:4
-    ypoints = 1:0.1:4
+#     xpoints = 1:0.1:4
+#     ypoints = 1:0.1:4
 
-    int2d = [interpolate2D(data, x, y, x0, y0) for x0 in xpoints, y0 in ypoints]
-    surface(xpoints, ypoints, int2d)
-end
+#     int2d = [interpolate2D(data, x, y, x0, y0) for x0 in xpoints, y0 in ypoints]
+#     surface(xpoints, ypoints, int2d)
+# end
 
-interpolate2DTest()
+# interpolate2DTest()

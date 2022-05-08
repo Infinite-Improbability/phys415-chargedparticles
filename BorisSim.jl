@@ -1,8 +1,8 @@
 using LinearAlgebra: cross, dot, norm
-using Plots
 using Unitful
-using UnitfulRecipes
 using Random
+using GLMakie
+import ColorSchemes.deep
 include("interpolation.jl")
 
 mutable struct Particle
@@ -47,7 +47,6 @@ end
 function stepPosition!(part::Particle, dt::Quantity)
     """Update position over timestep dt with current velocity."""
     part.r += part.v * dt
-
     part.r = mod1.(ustrip.(u"m", part.r), lim) * 1u"m"
 end
 
@@ -67,57 +66,45 @@ dt = 3e-11u"s" # timestep
 iterations = 10000
 
 # Define particles, in inital state
-particles = rand(Particle, 1)
+particles = rand(Particle, 4)
 # Set lims where everything loops around
 lim = 10
 
 # Init plot
-# Plot attributes have been chosen to cleanly represent
-# a single particle with no analytical line.
-# For more options see https://docs.juliaplots.org/stable/attributes/
-plt = plot3d(
-    length(particles), # multiple empty series
-    # title="Some title",
-    legend=:right,
-    xlabel="x (m)",
-    ylabel="y (m)",
-    zlabel="z (m)",
-    markershape=:none,
-    lims=(lim, lim, lim)
+GLMakie.activate!()
+scene = Scene(;
+    # clear everything behind scene
+    clear = true,
+    # the camera struct of the scene.
+    visible = true,
+    # ssao and light are explained in more detail in `Documetation/Lighting`
+    ssao = Makie.SSAO(),
+    # Creates lights from theme, which right now defaults to `
+    # set_theme!(lightposition=:eyeposition, ambient=RGBf(0.5, 0.5, 0.5))`
+    lights = Makie.automatic,
+    backgroundcolor = :white,
+    resolution = (500, 500)
 )
+cam3d!(scene)
+
+spheres = [Sphere(Point3f(ustrip.(u"m", p.r)...), ustrip(u"kg", p.m)) for p in particles]
+colours = deep[[ustrip(u"C", p.q) for p in particles]]
+sphere_plots = [mesh!(scene, spheres[i], color=colours[i]) for i in 1:length(particles)]
 
 # Offset initial velocity back 1/2 step so it leapfrogs with position
-stepVelocity!(p1, -dt / 2)
+stepVelocity!.(particles, -dt / 2)
 
 # Main loop
 print("Beginning loop.\n")
-anim = @gif for i in 1:iterations
+record(scene, "scene.mp4", 1:iterations) do i
     # ! indicates inplace functions
     stepVelocity!.(particles, dt)
     stepPosition!.(particles, dt)
     px = [ustrip.(u"m", p.r[1]) for p in particles]
     py = [ustrip.(u"m", p.r[2]) for p in particles]
     pz = [ustrip.(u"m", p.r[3]) for p in particles]
-    push!(plt, px, py, pz)
-    # Pushing Quantities to the plot failed even when using UnitfulRecipes
-    # (a package to give Plots unit support)
-    # This at least works.
-end every 10 # save every tenth run as a frame
+    translation_vectors = Vec3f.(px, py, pz)
+    translate!.(sphere_plots, translation_vectors)
+end
+
 print("Loop complete.\n")
-
-# The gif macro doesn't allow a custom output location.
-# It would be possible if I went more hands on in
-# the gif construction but it doesn't seem worth the effort.
-# You cqn export the last frame as an image with
-# savefig("filename")
-print("GIF saved at $(anim.filename)\n")
-# This is probably unneeded, as Julia Plots prints this anyway,
-# But I include it just in case.
-
-# The GUI display can only handle the last frame, not the animation.
-# It also doesn't seem to work when running in the REPL from VS Code,
-# but is helpful if funning in the terminal.
-# gui()
-#print("Press any key to exit ") # Don't immediately close on us
-#readline()
-display(anim)

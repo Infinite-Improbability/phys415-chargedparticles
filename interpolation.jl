@@ -2,12 +2,12 @@ function interpolate1D(f::Vector, x::Vector, x0)
     """Returns value of function f at x0 by linear interpolation of provided datapoints.
     x should be ascending. Interpolation is periodic"""
 
-    # Get an upper bound index for x0
-    # We use mod1 to make it periodic
-    i = max(mod1(findfirst(x .>= x0), length(x)), 2)
+    bounds = getBoundsIndices(x, x0)
+    i = bounds[1]
+    j = bounds[2]
 
     # Interpolate and return
-    f[i-1] + (f[i] - f[i-1])*(x0 - x[i-1])/(x[i] - x[i-1])
+    f[i] + (f[j] - f[i])*(x0 - x[i])/(x[j] - x[i])
 end
 
 function interpolate2D(f::Matrix, x::Vector, y::Vector, x0, y0)
@@ -40,14 +40,15 @@ function interpolate2DV2(f::Matrix, x::Vector, y::Vector, x0, y0)
     """
 
     # Find upper and lower y indices of grid square containing (x0, y0)
-    jp = mod1(findfirst(y .>= y0), length(y))
-    j = jp-1
+    bounds = getBoundsIndices(y, y0)
+    i = bounds[1]
+    j = bounds[2]
 
     # Intepolate for x at borders of grid (fixed y)
+    fi = interpolate1D(f[:,i], x, x0)
     fj = interpolate1D(f[:,j], x, x0)
-    fjp = interpolate1D(f[:,jp], x, x0)
 
-    return interpolate1D([fj, fjp], [y[j], y[jp]], y0)
+    return interpolate1D([fi, fj], [y[i], y[j]], y0)
 end
 
 function interpolate3D(f::Matrix, x::Vector, x0, y0, z0)
@@ -78,10 +79,10 @@ function getBoundsIndices(x::Vector, x0)::Tuple
     Values of x0 > max are treated periodically. Assumes x is ascending."""
 
     # Make sure x0 is in range
-    if min(x) <= x0 < max(x)
+    if minimum(x) <= x0 < maximum(x)
         @debug "Point out of range of input vectors"
+        x0 = mod1(x0, maximum(x))
     end
-    x0 = mod1(x0, max(x))
 
     # Get upper bounds
     j = findfirst(x .>= x0)

@@ -2,7 +2,6 @@ using LinearAlgebra: cross, dot, norm
 using Unitful
 using Random
 
-import ColorSchemes.deep
 include("interpolation.jl")
 include("renders.jl")
 
@@ -48,7 +47,7 @@ end
 function stepPosition!(part::Particle, dt::Quantity)
     """Update position over timestep dt with current velocity."""
     part.r += part.v * dt
-    part.r = mod1.(ustrip.(u"m", part.r), lim) * 1u"m"
+    # part.r = mod1.(ustrip.(u"m", part.r), lim) * 1u"m"
 end
 
 
@@ -67,11 +66,11 @@ dt = 3e-11u"s" # timestep
 iterations = 10000
 
 # Define particles, in inital state
-particles = rand(Particle, 1)
+particles = rand(Particle, 400)
 # Offset initial velocity back 1/2 step so it leapfrogs with position
 stepVelocity!.(particles, -dt / 2)
-# Set lims where everything loops around
-lim = 50
+# # Set lims where everything loops around
+# lim = 50
 # We'll store history in the following matrix [time, particle, coordinate]
 positions = Array{Quantity,3}(undef, iterations, length(particles), 3)
 
@@ -84,4 +83,10 @@ for i in 1:iterations
 end
 print("Loop complete.\n")
 
-makeRender(iterations, particles, positions, size=100)
+print("Making graphics.\n")
+# makeRender(iterations, particles, positions, size=100)
+plotTrajectories(positions)
+plotAtTime(positions, iterations, dt)
+plotParticle(positions, 1)
+print("Graphics complete. Press enter to exit.\n")
+readline()

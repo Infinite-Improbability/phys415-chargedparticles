@@ -1,5 +1,7 @@
 using Javis
 using Unitful
+using Plots
+import ColorSchemes.deep
 
 function makeRender(iterations::Int, particles::Vector, positions::Array{Quantity,3}; bgcolour="white", lenUnit::Unitful.LengthFreeUnits=u"m", outputFile="circle.gif", size::Int=500)
     print("Beginning animated render.\n")
@@ -50,4 +52,27 @@ function makeRender(iterations::Int, particles::Vector, positions::Array{Quantit
     )
 
     print("Render complete. File saved as $(outputFile).\n")
+end
+
+
+function plotTrajectories(positions)
+    positions = ustrip.(u"m", positions)
+    plt = plot(positions[:, :, 1], positions[:, :, 2], positions[:, :, 3], legend=false,
+    xlabel="x (m)", ylabel="y (m)", zlabel="z(m)",
+    title="Particle trajectories")
+    display(plt)
+end
+
+function plotAtTime(positions, timeIndex, dt)
+    positions = ustrip.(u"m", positions)
+    plt = scatter(positions[timeIndex, :, 1]', positions[timeIndex, :, 2]', positions[timeIndex, :, 3]',
+    legend=false, xlabel="x (m)", ylabel="y (m)", zlabel="z(m)", title="Positions at time $(timeIndex*dt)")
+    display(plt)
+end
+
+function plotParticle(positions, particleIndex)
+    positions = ustrip.(u"m", positions)
+    plt = plot(positions[:,particleIndex,1], positions[:,particleIndex,2], positions[:,particleIndex,3],
+    legend=false, xlabel="x (m)", ylabel="y (m)", zlabel="z(m)", title="Trajectory of particle $particleIndex")
+    display(plt)
 end

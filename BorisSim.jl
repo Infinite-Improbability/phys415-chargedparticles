@@ -1,23 +1,31 @@
 using LinearAlgebra: cross, dot, norm
 using Unitful
 using Random
-
-include("interpolation.jl")
+using PhysicalConstants.CODATA2018: m_e,e
+include("readData.jl")
 include("renders.jl")
+include("interpolation.jl")
 
 mutable struct Particle
     """Properties of a single particle in the system."""
     r::Vector # position vector [x, y, z]
     v::Vector # velocity vector
-    q::Quantity # charge
-    m::Quantity # mass
+    q # charge
+    m # mass
 end
 
 # Allow copying particle structs
 Base.copy(s::Particle) = Particle(s.r, s.v, s.q, s.m)
 # Random particle generation
+# Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle(
+#     [0u"m", 0u"m", 0u"m"],
+#     rand(rng, typeof(1u"m/s"), 3),
+#     1u"C",
+#     m_e
+# )
 Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle([0u"m", 0u"m", 0u"m"],
     rand(rng, typeof(1.0u"m/s"), 3), rand(rng, typeof(1.0u"C")), rand(rng, typeof(1.0u"kg")))
+
 
 # Define the electric and magnetic fields.
 # They are always defined as functions of position - even for
@@ -27,8 +35,23 @@ Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle([0u"m",
 # appropriate to the field type.
 # Units are denoted using Unitful's notation.
 # e.g. 1u"V/m" is 1 Volt per metre
-E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.01u"V/m"]
-B(r::Vector)::Vector = [0u"T", 0u"T", 1000000000u"T"]
+E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
+# B(r::Vector)::Vector = [0u"T", 0u"T", 1000000000u"T"]
+
+# Get mag field from HDF5
+Bx, By, Bz = loadHDF5() # assumes teslas
+# We'll make up the spatial dimensions, in metres
+x = range(-128, 128, 256) * 1e-8
+y = range(-128, 128, 256) * 1e-8
+z = range(-128, 128, 256) * 1e-8
+
+function B(r::Vector)::Vector
+    r = ustrip.(u"m", r)
+    fx = interpolate3D(Bx, x, y, z, r...)
+    fy = interpolate3D(By, x, y, z, r...)
+    fz = interpolate3D(Bz, x, y, z, r...)
+    return [fx, fy, fz] * 1u"T" * 1e60
+end
 
 function stepVelocity!(part::Particle, dt::Quantity)
     """Update velocity with change over timestep dt using Boris method."""
@@ -66,7 +89,11 @@ dt = 3e-11u"s" # timestep
 iterations = 10000
 
 # Define particles, in inital state
-particles = rand(Particle, 400)
+# The number here sets the number of particles.
+# particles = rand(Particle, 2)
+particles = Vector{Particle}(undef, 1)
+particles[1] = Particle([0u"m",0u"m",0u"m"], [1u"m/s",0u"m/s",0u"m/s"], e, m_e)
+# particles[2] = Particle([0u"m",0u"m",0u"m"], [1u"m/s",0u"m/s",0u"m/s"], -e, m_e)
 # Offset initial velocity back 1/2 step so it leapfrogs with position
 stepVelocity!.(particles, -dt / 2)
 # # Set lims where everything loops around
@@ -89,4 +116,4 @@ plotTrajectories(positions)
 plotAtTime(positions, iterations, dt)
 plotParticle(positions, 1)
 print("Graphics complete. Press enter to exit.\n")
-readline()
+# readline()

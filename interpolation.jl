@@ -1,4 +1,4 @@
-function interpolate1D(f::Vector, x::Vector, x0)
+function interpolate1D(f::AbstractVector, x::AbstractVector, x0)
     """Returns value of function f at x0 by linear interpolation of provided datapoints.
     x should be ascending. Interpolation is periodic"""
 
@@ -10,7 +10,7 @@ function interpolate1D(f::Vector, x::Vector, x0)
     f[i] + (f[j] - f[i])*(x0 - x[i])/(x[j] - x[i])
 end
 
-function interpolate2D(f::Matrix, x::Vector, y::Vector, x0, y0)
+function interpolate2D(f::Matrix, x::AbstractVector, y::AbstractVector, x0, y0)
     """
     Returns value of function f at (x0,y0) by repeated linear interpolation of provided datapoints.
     x should ascend as row index increases. y should ascend as column index increases.
@@ -30,7 +30,7 @@ function interpolate2D(f::Matrix, x::Vector, y::Vector, x0, y0)
     return interpolate1D([fi, fj], [y[i], y[j]], y0)
 end
 
-function interpolate3D(f::Array{T, 3}, x::Vector, y::Vector, z::Vector, x0, y0, z0) where T
+function interpolate3D(f::Array{T, 3}, x::AbstractVector, y::AbstractVector, z::AbstractVector, x0, y0, z0) where T
     """Returns value of function f at (x0,y0,z0) by bilinear interpolation of provided datapoints.
     x should be ascending. Interpolation is periodic."""
 
@@ -39,15 +39,14 @@ function interpolate3D(f::Array{T, 3}, x::Vector, y::Vector, z::Vector, x0, y0, 
     i,j = getBoundsIndices(z, z0)
 
     # Interpolate for f(x0,y0) holding z fixed
-    fi = interpolate2D(f[:,:,z[i]], x, y, x0, y0)
-    fj = interpolate2D(f[:,:,z[j]], x, y, x0, y0)
+    fi = interpolate2D(f[:,:,i], x, y, x0, y0)
+    fj = interpolate2D(f[:,:,j], x, y, x0, y0)
 
     # Interpolate between the planes
     return interpolate1D([fi, fj], [z[i], z[j]], z0)
-
 end
 
-function getBoundsIndices(x::Vector, x0)::Tuple
+function getBoundsIndices(x::AbstractVector, x0)::Tuple
     """Returns indices i and j of points such that x[i] < x <= x[j].
     Values of x0 > max are treated periodically. Assumes x is ascending."""
 

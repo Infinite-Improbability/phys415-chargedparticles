@@ -1,7 +1,9 @@
 [deps]
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 Javis = "78b212ba-a7f9-42d4-b726-60726080707e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+PhysicalConstants = "5ad8b20f-a522-5ce9-bfc9-ddf1d5bda6ab"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 UnitfulRecipes = "42071c24-d89e-48dd-8a24-8a12d9b8861f"

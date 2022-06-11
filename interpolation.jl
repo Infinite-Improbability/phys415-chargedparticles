@@ -11,30 +11,8 @@ function interpolate1D(f::Vector, x::Vector, x0)
 end
 
 function interpolate2D(f::Matrix, x::Vector, y::Vector, x0, y0)
-    """Returns value of function f at (x0,y0) by bilinear interpolation of provided datapoints.
-    x should be ascending. Interpolation is periodic."""
-
-    # Find lower indices of grid square containing (x0, y0)
-    i = mod1(findfirst(x .>= x0), length(x) - 1)
-    j = mod1(findfirst(y .>= y0), length(y) - 1)
-
-    # Prepare upper bounds so we don't go out of bounds
-    ip = mod1(i+1, length(x))
-    jp = mod1(j+1, length(y))
-
-    t = (x0 - x[i])/(x[ip] - x[i])
-    u = (y0 - y[i])/(y[ip] - y[i])
-
-    t1 = 1-t
-    u1 = 1-u
-
-    # Interpolate and return
-    t1*u1*f[i,j] + t*u1*f[ip,j] + t*u*f[ip,jp] + t1*u*f[i,jp]
-end
-
-function interpolate2DV2(f::Matrix, x::Vector, y::Vector, x0, y0)
     """
-    Returns value of function f at (x0,y0) by bilinear interpolation of provided datapoints.
+    Returns value of function f at (x0,y0) by repeated linear interpolation of provided datapoints.
     x should ascend as row index increases. y should ascend as column index increases.
     Interpolation is periodic.
     """
@@ -104,9 +82,6 @@ function interpolate2DTest()
 
     int2d = [interpolate2D(data, x, y, x0, y0) for x0 in xpoints, y0 in ypoints]
     display(surface(xpoints, ypoints, int2d))
-
-    int2dv2 = [interpolate2DV2(data, x, y, x0, y0) for x0 in xpoints, y0 in ypoints]
-    display(surface(xpoints, ypoints, int2dv2))
 end
 
 interpolate2DTest()

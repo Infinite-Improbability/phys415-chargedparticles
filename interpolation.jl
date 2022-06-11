@@ -18,6 +18,7 @@ function interpolate2D(f::Matrix, x::Vector, y::Vector, x0, y0)
     """
 
     # Find upper and lower y indices of grid square containing (x0, y0)
+    # We don't need the x indices
     bounds = getBoundsIndices(y, y0)
     i = bounds[1]
     j = bounds[2]
@@ -29,27 +30,21 @@ function interpolate2D(f::Matrix, x::Vector, y::Vector, x0, y0)
     return interpolate1D([fi, fj], [y[i], y[j]], y0)
 end
 
-function interpolate3D(f::Matrix, x::Vector, x0, y0, z0)
+function interpolate3D(f::Array{T, 3}, x::Vector, y::Vector, z::Vector, x0, y0, z0) where T
     """Returns value of function f at (x0,y0,z0) by bilinear interpolation of provided datapoints.
     x should be ascending. Interpolation is periodic."""
 
-    # Find lower indices of grid square containing (x0, y0)
-    i = mod1(findfirst(x .>= x0), length(x) - 1)
-    j = mod1(findfirst(y .>= y0), length(y) - 1)
-    k = mod1(findfirst(z .>= z0), length(z) - 1)
+    # Find bounding incides of grid cube containing (x0, y0, z0)\
+    # We don't need the x indices
+    i,j = getBoundsIndices(z, z0)
 
-    # Prepare upper bounds so we don't go out of bounds
-    ip = mod1(i+1, length(x))
-    jp = mod1(j+1, length(y))
-    kp = mod1(k+1, length(k))
+    # Interpolate for f(x0,y0) holding z fixed
+    fi = interpolate2D(f[:,:,z[i]], x, y, x0, y0)
+    fj = interpolate2D(f[:,:,z[j]], x, y, x0, y0)
 
-    t = (x0 - x[i])/(x[ip] - x[i])
-    u = (y0 - y[i])/(y[ip] - y[i])
-    v = (z0 - z[i])/(z[ip] - z[ip])
+    # Interpolate between the planes
+    return interpolate1D([fi, fj], [z[i], z[j]], z0)
 
-    t1 = 1-t
-    u1 = 1-u
-    z1 = 1-v
 end
 
 function getBoundsIndices(x::Vector, x0)::Tuple
@@ -84,4 +79,19 @@ function interpolate2DTest()
     display(surface(xpoints, ypoints, int2d))
 end
 
+function interpolate3DTest()
+    
+    data = rand(Float64, (4,4,4))
+    x = Vector(1:4)
+    y = Vector(1:4)
+    z = Vector(1:4)
+
+    xpoints = 1:0.1:4
+    ypoints = 1:0.1:4
+    zpoints = 1:0.1:4
+
+    [interpolate3D(data, x, y, z, x0, y0, z0) for x0 in xpoints, y0 in ypoints, z0 in zpoints]
+end
+
 interpolate2DTest()
+interpolate3DTest()

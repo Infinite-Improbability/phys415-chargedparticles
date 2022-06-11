@@ -47,23 +47,23 @@ Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle(
 # Just uncomment whichever block you want to use.
 
 # Uniform fields
-# E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.01u"V/m"]
-# B(r::Vector)::Vector = [0u"T", 0u"T", 1000000000u"T"]
+E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.01u"V/m"]
+B(r::Vector)::Vector = [0u"T", 0u"T", 1000000000u"T"]
 
 # # Load magnetic field in from HDF5 data
-E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
-Bx, By, Bz = loadHDF5()
-# We'll make up the spatial dimensions, in metres
-x = range(-128, 128, 256) * 1e-8
-y = range(-128, 128, 256) * 1e-8
-z = range(-128, 128, 256) * 1e-8
-function B(r::Vector)::Vector
-    r = ustrip.(u"m", r)
-    fx = interpolate3D(Bx, x, y, z, r...)
-    fy = interpolate3D(By, x, y, z, r...)
-    fz = interpolate3D(Bz, x, y, z, r...)
-    return [fx, fy, fz] * 100000u"T" # Scale factor was chosen to get clear behaviour for default particle generation
-end
+# E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
+# Bx, By, Bz = loadHDF5()
+# # We'll make up the spatial dimensions, in metres
+# x = range(-128, 128, 256) * 1e-8
+# y = range(-128, 128, 256) * 1e-8
+# z = range(-128, 128, 256) * 1e-8
+# function B(r::Vector)::Vector
+#     r = ustrip.(u"m", r)
+#     fx = interpolate3D(Bx, x, y, z, r...)
+#     fy = interpolate3D(By, x, y, z, r...)
+#     fz = interpolate3D(Bz, x, y, z, r...)
+#     return [fx, fy, fz] * 100000u"T" # Scale factor was chosen to get clear behaviour for default particle generation
+# end
 
 # Interpolate over a uniform field
 # E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
@@ -102,7 +102,6 @@ end
 function stepPosition!(part::Particle, dt::Quantity)
     """Update position over timestep dt with current velocity."""
     part.r += part.v * dt
-    # part.r = mod1.(ustrip.(u"m", part.r), lim) * 1u"m"
 end
 
 
@@ -122,7 +121,7 @@ dt = 3e-11u"s" # timestep
 iterations = 10000
 # Define particles, in inital state
 # The second argument to rand sets the number of particles.
-particles = rand(Particle, 10)
+particles = rand(Particle, 100)
 print("There are $(length(particles)) particles.\n")
 # Offset initial velocity back 1/2 step so it leapfrogs with position
 stepVelocity!.(particles, -dt / 2)
@@ -144,4 +143,4 @@ plotTrajectories(positions)
 plotAtTime(positions, iterations, dt)
 plotParticle(positions, 1)
 print("Graphics complete. Press enter to exit.\n")
-# readline() # Uncomment if you're having trouble with plots immediately closing
+readline() # Uncomment if you're having trouble with plots immediately closing

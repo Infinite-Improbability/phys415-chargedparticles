@@ -51,9 +51,9 @@ function getBoundsIndices(x::AbstractVector, x0)::Tuple
     Values of x0 > max are treated periodically. Assumes x is ascending."""
 
     # Make sure x0 is in range
-    if minimum(x) <= x0 < maximum(x)
+    if minimum(x) > x0 || x0 >= maximum(x)
         @debug "Point out of range of input vectors"
-        x0 = mod1(x0, maximum(x))
+        x0 = rem(x0, maximum(x))
     end
 
     # Get upper bounds
@@ -63,34 +63,32 @@ function getBoundsIndices(x::AbstractVector, x0)::Tuple
     return (i, j)
 end
 
+# This all works, but there's no point in loading it in production
+# using Plots
+# function interpolate2DTest()
+#     data = rand(Float64, (4,4))
+#     x = Vector(1:4)
+#     y = Vector(1:4)
 
-using Plots
-function interpolate2DTest()
+#     xpoints = 1:0.1:4
+#     ypoints = 1:0.1:4
+
+#     int2d = [interpolate2D(data, x, y, x0, y0) for x0 in xpoints, y0 in ypoints]
+#     display(surface(xpoints, ypoints, int2d))
+# end
+
+# function interpolate3DTest()
     
-    data = rand(Float64, (4,4))
-    x = Vector(1:4)
-    y = Vector(1:4)
+#     data = rand(Float64, (4,4,4))
+#     x = Vector(1:4)
+#     y = Vector(1:4)
+#     z = Vector(1:4)
 
-    xpoints = 1:0.1:4
-    ypoints = 1:0.1:4
+#     xpoints = 1:0.1:4
+#     ypoints = 1:0.1:4
+#     zpoints = 1:0.1:4
 
-    int2d = [interpolate2D(data, x, y, x0, y0) for x0 in xpoints, y0 in ypoints]
-    display(surface(xpoints, ypoints, int2d))
-end
-
-function interpolate3DTest()
-    
-    data = rand(Float64, (4,4,4))
-    x = Vector(1:4)
-    y = Vector(1:4)
-    z = Vector(1:4)
-
-    xpoints = 1:0.1:4
-    ypoints = 1:0.1:4
-    zpoints = 1:0.1:4
-
-    [interpolate3D(data, x, y, z, x0, y0, z0) for x0 in xpoints, y0 in ypoints, z0 in zpoints]
-end
-
+#     [interpolate3D(data, x, y, z, x0, y0, z0) for x0 in xpoints, y0 in ypoints, z0 in zpoints]
+# end
 # interpolate2DTest()
 # interpolate3DTest()

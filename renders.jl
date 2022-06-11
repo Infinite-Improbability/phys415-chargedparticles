@@ -5,6 +5,8 @@ import ColorSchemes.deep
 
 function makeRender(iterations::Int, particles::Vector, positions::Array{Quantity,3}; bgcolour="white", lenUnit::Unitful.LengthFreeUnits=u"m", outputFile="circle.gif", size::Int=500)
     print("Beginning animated render.\n")
+    @warn "This is extremely buggy. Use of the alternative render methods is suggested."
+
     # Init video
     function ground(args...)
         background(bgcolour) # canvas background

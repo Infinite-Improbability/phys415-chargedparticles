@@ -1,11 +1,11 @@
 using LinearAlgebra: cross, dot, norm
 using Unitful
 using Random
-using PhysicalConstants.CODATA2018: m_e,e
-include("readData.jl")
-include("renders.jl")
+include("readData.jl") # Read field in from file
+include("renders.jl") # Functions to generate outputs
 include("interpolation.jl")
 
+# -----------------------------------------------------------------------
 mutable struct Particle
     """Properties of a single particle in the system."""
     r::Vector # position vector [x, y, z]
@@ -14,44 +14,76 @@ mutable struct Particle
     m # mass
 end
 
-# Allow copying particle structs
-Base.copy(s::Particle) = Particle(s.r, s.v, s.q, s.m)
-# Random particle generation
+# Create a way to generate random particles
+Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle(
+    (rand(rng, typeof(1.0u"m"), 3) - rand(rng, typeof(1.0u"m"), 3)) * 1e-7,
+    rand(rng, typeof(1.0u"m/s"), 3) - rand(rng, typeof(1.0u"m/s"), 3),
+    rand(rng, typeof(1.0u"C")) - rand(rng, typeof(1.0u"C")),
+    rand(rng, typeof(1.0u"kg"))
+)
+
+# More limited random values, makes cooler plots
 # Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle(
 #     [0u"m", 0u"m", 0u"m"],
-#     rand(rng, typeof(1u"m/s"), 3),
-#     1u"C",
-#     m_e
+#     rand(rng, typeof(1.0u"m/s"), 3),
+#     rand(rng, typeof(1.0u"C")),
+#     rand(rng, typeof(1.0u"kg"))
 # )
-Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle([0u"m", 0u"m", 0u"m"],
-    rand(rng, typeof(1.0u"m/s"), 3), rand(rng, typeof(1.0u"C")), rand(rng, typeof(1.0u"kg")))
 
+
+# -----------------------------------------------------------------------
 
 # Define the electric and magnetic fields.
 # They are always defined as functions of position - even for
 # constant fields - so that you don't have to go through changing
 # the Boris method code whenever you switch to a position dependent field.
-# The field functions can be anything that returns a three element vector with units
-# appropriate to the field type.
+
+# The field functions can be anything of the form E(r::Vector)::Vector{T}
+# The output is a vector of length 3 and in units apprioate to the field type
+# There must be an E function for the electric field and a B function for the magnetic field
+
 # Units are denoted using Unitful's notation.
 # e.g. 1u"V/m" is 1 Volt per metre
-E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
+# Just uncomment whichever block you want to use.
+
+# Uniform fields
+# E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.01u"V/m"]
 # B(r::Vector)::Vector = [0u"T", 0u"T", 1000000000u"T"]
 
-# Get mag field from HDF5
-Bx, By, Bz = loadHDF5() # assumes teslas
+# # Load magnetic field in from HDF5 data
+E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
+Bx, By, Bz = loadHDF5()
 # We'll make up the spatial dimensions, in metres
 x = range(-128, 128, 256) * 1e-8
 y = range(-128, 128, 256) * 1e-8
 z = range(-128, 128, 256) * 1e-8
-
 function B(r::Vector)::Vector
     r = ustrip.(u"m", r)
     fx = interpolate3D(Bx, x, y, z, r...)
     fy = interpolate3D(By, x, y, z, r...)
     fz = interpolate3D(Bz, x, y, z, r...)
-    return [fx, fy, fz] * 1u"T" * 1e60
+    return [fx, fy, fz] * 100000u"T" # Scale factor was chosen to get clear behaviour for default particle generation
 end
+
+# Interpolate over a uniform field
+# E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
+# Bx = fill(100, (256,256,256))
+# By = fill(100, (256,256,256))
+# Bz = fill(100, (256,256,256))
+# # We'll make up the spatial dimensions, in metres
+# x = range(-128, 128, 256) * 1e-7
+# y = range(-128, 128, 256) * 1e-7
+# z = range(-128, 128, 256) * 1e-7
+# function B(r::Vector)::Vector
+#     r = ustrip.(u"m", r)
+#     fx = interpolate3D(Bx, x, y, z, r...)
+#     fy = interpolate3D(By, x, y, z, r...)
+#     fz = interpolate3D(Bz, x, y, z, r...)
+#     return [fx, fy, fz] * 100000u"T" # Scale factor was chosen to get clear behaviour for default particle generation
+# end
+
+
+# -----------------------------------------------------------------------
 
 function stepVelocity!(part::Particle, dt::Quantity)
     """Update velocity with change over timestep dt using Boris method."""
@@ -82,22 +114,18 @@ function lamorRadius(part::Particle)::Quantity
     return part.m * vTang / part.q / norm(B(part.r))
 end
 
+# -----------------------------------------------------------------------
 
 # Init system
 print("Initialising system.\n")
 dt = 3e-11u"s" # timestep
 iterations = 10000
-
 # Define particles, in inital state
-# The number here sets the number of particles.
-# particles = rand(Particle, 2)
-particles = Vector{Particle}(undef, 1)
-particles[1] = Particle([0u"m",0u"m",0u"m"], [1u"m/s",0u"m/s",0u"m/s"], e, m_e)
-# particles[2] = Particle([0u"m",0u"m",0u"m"], [1u"m/s",0u"m/s",0u"m/s"], -e, m_e)
+# The second argument to rand sets the number of particles.
+particles = rand(Particle, 10)
+print("There are $(length(particles)) particles.\n")
 # Offset initial velocity back 1/2 step so it leapfrogs with position
 stepVelocity!.(particles, -dt / 2)
-# # Set lims where everything loops around
-# lim = 50
 # We'll store history in the following matrix [time, particle, coordinate]
 positions = Array{Quantity,3}(undef, iterations, length(particles), 3)
 
@@ -116,4 +144,4 @@ plotTrajectories(positions)
 plotAtTime(positions, iterations, dt)
 plotParticle(positions, 1)
 print("Graphics complete. Press enter to exit.\n")
-# readline()
+# readline() # Uncomment if you're having trouble with plots immediately closing

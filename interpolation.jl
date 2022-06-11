@@ -93,5 +93,5 @@ function interpolate3DTest()
     [interpolate3D(data, x, y, z, x0, y0, z0) for x0 in xpoints, y0 in ypoints, z0 in zpoints]
 end
 
-interpolate2DTest()
-interpolate3DTest()
+# interpolate2DTest()
+# interpolate3DTest()

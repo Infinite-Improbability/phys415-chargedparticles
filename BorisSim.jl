@@ -50,7 +50,8 @@ Random.rand(rng::AbstractRNG, ::Random.SamplerType{Particle}) = Particle(
 E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.01u"V/m"]
 B(r::Vector)::Vector = [0u"T", 0u"T", 1000000000u"T"]
 
-# # Load magnetic field in from HDF5 data
+# Load magnetic field in from HDF5 data
+# Interpolation is slow so don't use it with lots of particles
 # E(r::Vector)::Vector = [0u"V/m", 0u"V/m", 0.0u"V/m"]
 # Bx, By, Bz = loadHDF5()
 # # We'll make up the spatial dimensions, in metres
@@ -138,9 +139,12 @@ end
 print("Loop complete.\n")
 
 print("Making graphics.\n")
-# makeRender(iterations, particles, positions, size=100)
 plotTrajectories(positions)
 plotAtTime(positions, iterations, dt)
 plotParticle(positions, 1)
+
+# This is buggy but the output is the most interesting of the various options
+# makeRender(iterations, particles, positions, size=100)
+
 print("Graphics complete. Press enter to exit.\n")
-readline() # Uncomment if you're having trouble with plots immediately closing
+# readline() # Uncomment if you're having trouble with plots immediately closing

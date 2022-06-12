@@ -126,7 +126,7 @@ particles = rand(Particle, 100)
 print("There are $(length(particles)) particles.\n")
 # Offset initial velocity back 1/2 step so it leapfrogs with position
 stepVelocity!.(particles, -dt / 2)
-# We'll store history in the following matrix [time, particle, coordinate]
+# We'll store history in the following 3D array with indices [time, particle, coordinate]
 positions = Array{Quantity,3}(undef, iterations, length(particles), 3)
 
 # Main loop
@@ -147,4 +147,4 @@ plotParticle(positions, 1)
 # makeRender(iterations, particles, positions, size=100)
 
 print("Graphics complete. Press enter to exit.\n")
-# readline() # Uncomment if you're having trouble with plots immediately closing
+readline() # Uncomment if you're having trouble with plots immediately closing

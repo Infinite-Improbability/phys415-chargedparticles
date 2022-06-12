@@ -140,11 +140,15 @@ print("Loop complete.\n")
 
 print("Making graphics.\n")
 plotTrajectories(positions)
+print("Close plot and press enter to load next plot.")
+readline()
 plotAtTime(positions, iterations, dt)
+print("Close plot and press enter to load next plot.")
+readline()
 plotParticle(positions, 1)
 
 # This is buggy but the output is the most interesting of the various options
 # makeRender(iterations, particles, positions, size=100)
 
-print("Graphics complete. Press enter to exit.\n")
-readline() # Uncomment if you're having trouble with plots immediately closing
+print("Graphics complete. Press enter to exit.")
+readline() # Doesn't interact well with running in REPL.
